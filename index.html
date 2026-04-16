@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Habit Tracker 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #fdf6ee;
+    --surface:  #fff9f2;
+    --card:     #fffcf8;
+    --border:   #e8d8c4;
+    --warm1:    #c27c4a;
+    --warm2:    #e8a87c;
+    --warm3:    #f5cba7;
+    --accent:   #7a4f3a;
+    --green:    #5a8a5e;
+    --text:     #3b2c23;
+    --muted:    #9a7d6b;
+    --shadow:   rgba(130,80,40,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 10% 10%, #f5dfc0 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, #ead5b8 0%, transparent 45%);
+    min-height: 100vh;
+    font-family: 'Lora', serif;
+    color: var(--text);
+    padding: 2rem 1rem 4rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+  }
+
+  .date-badge {
+    display: inline-block;
+    background: var(--warm3);
+    color: var(--accent);
+    border-radius: 30px;
+    padding: 0.3rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.6rem;
+    letter-spacing: 0.03em;
+  }
+
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .add-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1.2rem 1.4rem;
+    display: flex;
+    gap: 0.7rem;
+    align-items: center;
+    box-shadow: 0 2px 12px var(--shadow);
+    animation: fadeUp 0.6s ease both 0.1s;
+  }
+
+  .add-card input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Lora', serif;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .add-card input::placeholder { color: var(--muted); }
+
+  .emoji-pick {
+    font-size: 1.4rem;
+    cursor: pointer;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.25rem 0.5rem;
+    transition: transform 0.15s;
+    user-select: none;
+  }
+  .emoji-pick:hover { transform: scale(1.15); }
+
+  /* Panel is moved to <body> via JS — no stacking context issues */
+  .emoji-panel {
+    display: none;
+    position: fixed;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 0.6rem;
+    font-size: 1.4rem;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    width: 220px;
+    z-index: 9999;
+    box-shadow: 0 6px 24px var(--shadow);
+  }
+  .emoji-panel.open { display: flex; }
+  .emoji-panel span {
+    cursor: pointer;
+    padding: 0.2rem;
+    border-radius: 6px;
+    transition: background 0.1s;
+  }
+  .emoji-panel span:hover { background: var(--warm3); }
+
+  .btn-add {
+    background: var(--warm1);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.55rem 1.2rem;
+    font-family: 'Lora', serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-add:hover { background: var(--accent); transform: scale(1.04); }
+
+  .habits-section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin-bottom: 0.9rem;
+    padding-left: 0.2rem;
+  }
+
+  .habit-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1rem 1.3rem;
+    box-shadow: 0 2px 10px var(--shadow);
+    animation: fadeUp 0.45s ease both;
+    transition: box-shadow 0.2s;
+    margin-bottom: 0.8rem;
+  }
+  .habit-card:hover { box-shadow: 0 4px 20px var(--shadow); }
+
+  .habit-header {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .habit-checkbox {
+    width: 28px; height: 28px;
+    border: 2px solid var(--warm2);
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    user-select: none;
+  }
+  .habit-checkbox.done {
+    background: var(--green);
+    border-color: var(--green);
+    transform: scale(1.08);
+  }
+
+  .habit-name {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .habit-name.done { text-decoration: line-through; color: var(--muted); }
+
+  .streak-badge {
+    background: linear-gradient(135deg, #f5cba7, #e8a87c);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .habit-meta {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .week-dots {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .week-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .week-dot.filled { background: var(--warm2); border-color: var(--warm1); }
+  .week-dot.today  { border-color: var(--warm1); }
+
+  .progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--warm2), var(--warm1));
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .btn-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.2rem;
+    border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .btn-delete:hover { color: #c0392b; background: #fdecea; }
+
+  .summary-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1.3rem 1.5rem;
+    box-shadow: 0 2px 12px var(--shadow);
+    animation: fadeUp 0.6s ease both 0.3s;
+  }
+
+  .summary-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    height: 90px;
+  }
+
+  .chart-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .chart-bar-wrap {
+    width: 100%;
+    background: var(--border);
+    border-radius: 6px 6px 0 0;
+    height: 72px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+
+  .chart-bar-fill {
+    width: 100%;
+    background: linear-gradient(180deg, var(--warm2), var(--warm1));
+    border-radius: 6px 6px 0 0;
+    transition: height 0.6s cubic-bezier(.4,0,.2,1);
+  }
+
+  .chart-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .chart-label.today-lbl { color: var(--warm1); font-weight: 600; }
+
+  .summary-footer {
+    margin-top: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .summary-stat strong { color: var(--accent); font-size: 1rem; }
+
+  .empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .empty .big { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .confetti {
+    position: fixed;
+    pointer-events: none;
+    font-size: 1.4rem;
+    animation: floatUp 1.1s ease-out forwards;
+    z-index: 9998;
+  }
+  @keyframes floatUp {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(-80px) scale(1.4); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 My Habits</h1>
+  <p>Small steps, every day</p>
+  <div class="date-badge" id="dateBadge"></div>
+</header>
+
+<div class="container">
+
+  <div class="add-card">
+    <div class="emoji-pick" id="emojiBtn" title="Pick emoji">🌱</div>
+    <input type="text" id="habitInput" placeholder="Add a new habit…" maxlength="50"/>
+    <button class="btn-add" onclick="addHabit()">+ Add</button>
+  </div>
+
+  <div class="habits-section">
+    <h2>Today's Habits</h2>
+    <div id="habitList"></div>
+  </div>
+
+  <div class="summary-card">
+    <h2>📊 This Week</h2>
+    <div class="chart-bars" id="chartBars"></div>
+    <div class="summary-footer">
+      <div class="summary-stat">Total habits: <strong id="totalCount">0</strong></div>
+      <div class="summary-stat">Done today: <strong id="doneCount">0</strong></div>
+      <div class="summary-stat">Best streak: <strong id="bestStreak">0</strong> 🔥</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const EMOJIS = ['🌱','🌿','🍃','🌸','🌻','🌙','⭐','☕','📚','🏃','💧','🧘','🎨','✍️','🎵','💪','🥗','🛌','🐾','🌈','🦋','🍵','🧁','🌺','🪴'];
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const TODAY  = new Date();
+const todayKey = () => TODAY.toISOString().slice(0, 10);
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem('cozyHabits') || '[]'); } catch { return []; }
+}
+function saveData(h) { localStorage.setItem('cozyHabits', JSON.stringify(h)); }
+
+let habits = loadData();
+if (!habits.length) {
+  habits = [
+    { id: 1, name: 'Drink 8 glasses of water', emoji: '💧', history: {} },
+    { id: 2, name: 'Read for 20 minutes',       emoji: '📚', history: {} },
+    { id: 3, name: 'Morning stretch',            emoji: '🧘', history: {} },
+  ];
+  saveData(habits);
+}
+
+let selectedEmoji = '🌱';
+
+// Date badge
+document.getElementById('dateBadge').textContent =
+  TODAY.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+
+// ── EMOJI PANEL ──
+// Appended directly to <body> so it's never clipped by a parent's overflow or stacking context
+const emojiBtn   = document.getElementById('emojiBtn');
+const emojiPanel = document.createElement('div');
+emojiPanel.className = 'emoji-panel';
+emojiPanel.innerHTML = EMOJIS.map(e => `<span>${e}</span>`).join('');
+document.body.appendChild(emojiPanel);
+
+function openPanel() {
+  const rect = emojiBtn.getBoundingClientRect();
+  emojiPanel.style.top  = (rect.bottom + 6) + 'px';
+  emojiPanel.style.left = rect.left + 'px';
+  emojiPanel.classList.add('open');
+}
+function closePanel() { emojiPanel.classList.remove('open'); }
+
+emojiBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  emojiPanel.classList.contains('open') ? closePanel() : openPanel();
+});
+
+emojiPanel.addEventListener('click', e => {
+  e.stopPropagation();
+  const span = e.target.closest('span');
+  if (!span) return;
+  selectedEmoji = span.textContent;
+  emojiBtn.textContent = selectedEmoji;
+  closePanel();
+});
+
+document.addEventListener('click', closePanel);
+
+// ── ADD HABIT ──
+document.getElementById('habitInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addHabit();
+});
+
+function addHabit() {
+  const input = document.getElementById('habitInput');
+  const name  = input.value.trim();
+  if (!name) return;
+  habits.push({ id: Date.now(), name, emoji: selectedEmoji, history: {} });
+  saveData(habits);
+  input.value          = '';
+  selectedEmoji        = '🌱';
+  emojiBtn.textContent = '🌱';
+  render();
+}
+
+function deleteHabit(id) {
+  habits = habits.filter(h => h.id !== id);
+  saveData(habits);
+  render();
+}
+
+function toggleHabit(id, el) {
+  const h = habits.find(h => h.id === id);
+  if (!h) return;
+  const key = todayKey();
+  h.history[key] = !h.history[key];
+  saveData(habits);
+  if (h.history[key]) spawnConfetti(el);
+  render();
+}
+
+function calcStreak(history) {
+  let streak = 0;
+  const d = new Date(TODAY);
+  while (true) {
+    const k = d.toISOString().slice(0, 10);
+    if (history[k]) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+function getWeekDays() {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(TODAY);
+    d.setDate(TODAY.getDate() - (6 - i));
+    return { key: d.toISOString().slice(0, 10), label: DAYS[d.getDay()], isToday: i === 6 };
+  });
+}
+
+function render() {
+  const weekDays = getWeekDays();
+  const list     = document.getElementById('habitList');
+
+  if (!habits.length) {
+    list.innerHTML = `<div class="empty"><div class="big">🌾</div>Add your first habit above!</div>`;
+  } else {
+    list.innerHTML = '';
+    habits.forEach((h, idx) => {
+      const done      = !!h.history[todayKey()];
+      const streak    = calcStreak(h.history);
+      const weekTotal = weekDays.filter(d => h.history[d.key]).length;
+      const pct       = Math.round(weekTotal / 7 * 100);
+
+      const card = document.createElement('div');
+      card.className = 'habit-card';
+      card.style.animationDelay = (idx * 0.07) + 's';
+      card.innerHTML = `
+        <div class="habit-header">
+          <div class="habit-checkbox ${done ? 'done' : ''}" onclick="toggleHabit(${h.id}, this)">
+            ${done ? '✓' : ''}
+          </div>
+          <span class="habit-name ${done ? 'done' : ''}">${h.emoji} ${h.name}</span>
+          ${streak > 0 ? `<span class="streak-badge">🔥 ${streak}</span>` : ''}
+          <button class="btn-delete" onclick="deleteHabit(${h.id})" title="Delete">✕</button>
+        </div>
+        <div class="habit-meta">
+          <div class="week-dots">
+            ${weekDays.map(d => `
+              <div class="week-dot ${h.history[d.key] ? 'filled' : ''} ${d.isToday ? 'today' : ''}" title="${d.label}">
+                ${d.label[0]}
+              </div>`).join('')}
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${pct}%"></div>
+            </div>
+            <span>${pct}% this week</span>
+          </div>
+        </div>`;
+      list.appendChild(card);
+    });
+  }
+
+  renderChart(weekDays);
+  updateStats();
+}
+
+function renderChart(weekDays) {
+  const bars  = document.getElementById('chartBars');
+  bars.innerHTML = '';
+  const total = habits.length || 1;
+  weekDays.forEach(day => {
+    const count = habits.filter(h => h.history[day.key]).length;
+    const pct   = count / total;
+    const col   = document.createElement('div');
+    col.className = 'chart-col';
+    col.innerHTML = `
+      <div class="chart-bar-wrap">
+        <div class="chart-bar-fill" style="height:${Math.round(pct * 100)}%"></div>
+      </div>
+      <div class="chart-label ${day.isToday ? 'today-lbl' : ''}">${day.label[0]}</div>`;
+    bars.appendChild(col);
+  });
+}
+
+function updateStats() {
+  const key = todayKey();
+  document.getElementById('totalCount').textContent = habits.length;
+  document.getElementById('doneCount').textContent  = habits.filter(h => h.history[key]).length;
+  const best = habits.reduce((m, h) => Math.max(m, calcStreak(h.history)), 0);
+  document.getElementById('bestStreak').textContent = best;
+}
+
+function spawnConfetti(el) {
+  const rect = el.getBoundingClientRect();
+  ['🌸','✨','⭐','🎉'].forEach((e, i) => {
+    const el2 = document.createElement('span');
+    el2.className   = 'confetti';
+    el2.textContent = e;
+    el2.style.left  = (rect.left + Math.random() * 40 - 10) + 'px';
+    el2.style.top   = (rect.top + window.scrollY - 10) + 'px';
+    el2.style.animationDelay = (i * 0.1) + 's';
+    document.body.appendChild(el2);
+    setTimeout(() => el2.remove(), 1300);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
